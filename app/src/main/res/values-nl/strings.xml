@@ -1,0 +1,18 @@
+<resources>
+    <string name="app_name">Hans\' Weather+"</string>
+
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Instellingen</string>
+    <string name="enter_city_country">Geef stad,landcode</string>
+    <string name="temp">Temperatuur</string>
+    <string name="min_temp">Minimum</string>
+    <string name="max_temp">Maximum</string>
+    <string name="pressure">Luchtdruk</string>
+    <string name="description">Het weer</string>
+    <string name="humidity">Vochtigheid</string>
+    <string name="stad_land">Stad of Stad,Landcode</string>
+    <string name="go">Laat maar zien</string>
+    <string name="sunset_sunrise">Zon op/onder</string>
+    <string name="wind">Wind</string>
+
+</resources>

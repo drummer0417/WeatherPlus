@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">Hans\' Weather+"</string>
+
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+    <string name="enter_city_country">Enter city,country</string>
+    <string name="temp">Temperature</string>
+    <string name="min_temp">Minimum</string>
+    <string name="max_temp">Maximum</string>
+    <string name="wind">Wind</string>
+    <string name="pressure">Pressure</string>
+    <string name="description">The weather</string>
+    <string name="humidity">Humidity</string>
+    <string name="sunset_sunrise">Sun rise/set</string>
+    <string name="empty_string"></string>
+    <string name="stad_land">City or City,Country code</string>
+    <string name="go">Show me the weather</string>
+
+</resources>
