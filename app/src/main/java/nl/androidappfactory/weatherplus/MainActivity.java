@@ -248,26 +248,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
-//        if (checkPermission()){
-//            return;
-//        }
-//        locationManager.requestLocationUpdates(provider, 60000l, 100f, this);
-//        Log.d("Location info", "Updates requested");
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-//        if (checkPermission()){
-//            return;
-//        }
-//        locationManager.removeUpdates(this);
-//        Log.d("Location info", "Updates removed");
-    }
-
-    @Override
     public void onLocationChanged(Location location) {
         Log.d("Location info", "location changed: " + location.toString());
     }
@@ -381,10 +361,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
 
         return Build.VERSION.SDK_INT >= 23 && !(checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED);
-//        if (Build.VERSION.SDK_INT >= 23) {
-//            return !(checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED);
-//        } else {
-//            return false;
-//        }
+
     }
 }
