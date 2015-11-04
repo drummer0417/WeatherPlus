@@ -6,7 +6,6 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -54,6 +53,11 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     LocationManager locationManager;
     String provider;
 
+    boolean isGPSEnabled = false;
+    boolean isNetworkEnabled = false;
+    private static final long MIN_DISTANCE_CHANGE = 10; // 10 meters
+    private static final long MIN_TIME_UPDATES = 1000 * 60 * 1; // 1 minute
+
     ImageView ivIcon;
     private static final String API_URL = "http://api.openweathermap.org/data/2.5/weather?";
     private static final String API_KEY = "778cf1f4833e31ec3f0d6c5916e48724";
@@ -78,20 +82,17 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         ivIcon = (ImageView) findViewById(R.id.ivIcon);
         etLocation = ((EditText) findViewById(R.id.etLocation));
 
-        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        provider = locationManager.getBestProvider(new Criteria(), false);
-        if (checkPermission()){
-            return;
-        }
-        location = locationManager.getLastKnownLocation(provider);
-        Log.d("Location info", location.toString());
+        location = getLocation(this);
+        Log.d("Location info", location != null ? location.toString() : "null");
 
-//        etLocation.setText("Eindhoven");
+        if (location ==null){
+            etLocation.setText("Eindhoven");
+        }
         getWeather(null);
 
     }
 
-    public void getWeaterCurrentLocation(View view){
+    public void getWeaterCurrentLocation(View view) {
 
         // by making etLocation empty the getWeather(View view) methoc will search on current location
         etLocation.setText(null);
@@ -157,15 +158,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 String name = jsonObject.isNull("name") ? null : jsonObject.getString("name");
                 Log.d("cod", cod);
 
-//                int index = sLocation.indexOf(",");
-//                String city = null;
-//                if (index < 0) {
-//                    city = location;
-//                } else {
-//                    city = location.substring(0, index);
-//                    Log.d("city", city);
-//                }
-//                if ((cod != null && cod.equals("200")) && (name != null && name.equalsIgnoreCase(city))) {
                 if ((cod != null && cod.equals("200")) && (name != null)) {
 
                     Log.d("Name", name);
@@ -212,6 +204,37 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         return weather;
     }
 
+    private Location getLocation(Context context) {
+        Location theLocation = null;
+
+        locationManager = (LocationManager) context.getSystemService(LOCATION_SERVICE);
+        isGPSEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+        isNetworkEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+
+        if (!isGPSEnabled && !isNetworkEnabled) {
+            // no network provider is enabled
+        } else {
+            if (isNetworkEnabled) {
+                // Permission check required as of version 23
+                checkPermission();
+                Log.d("Network", "Network");
+                if (locationManager != null) {
+                    theLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+                }
+            }
+            // if GPS Enabled get lat/long using GPS Services
+            if (isGPSEnabled) {
+                if (theLocation == null) {
+                    Log.d("GPS Enabled", "GPS Enabled");
+                    if (locationManager != null) {
+                        theLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                    }
+                }
+            }
+        }
+        return theLocation;
+    }
+
     private String formatOneDecimal(String s) {
 
         String result = null;
@@ -226,21 +249,21 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     @Override
     protected void onResume() {
         super.onResume();
-        if (checkPermission()){
-            return;
-        }
-        locationManager.requestLocationUpdates(provider, 60000l, 100f, this);
-        Log.d("Location info", "Updates requested");
+//        if (checkPermission()){
+//            return;
+//        }
+//        locationManager.requestLocationUpdates(provider, 60000l, 100f, this);
+//        Log.d("Location info", "Updates requested");
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        if (checkPermission()){
-            return;
-        }
-        locationManager.removeUpdates(this);
-        Log.d("Location info", "Updates removed");
+//        if (checkPermission()){
+//            return;
+//        }
+//        locationManager.removeUpdates(this);
+//        Log.d("Location info", "Updates removed");
     }
 
     @Override
@@ -359,7 +382,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 // to handle the case where the user grants the permission. See the documentation
                 // for Activity#requestPermissions for more details.
                 return false;
-            }else {
+            } else {
                 return true;
             }
         } else {
