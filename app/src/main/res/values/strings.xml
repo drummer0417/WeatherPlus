@@ -12,8 +12,14 @@
     <string name="description">The weather</string>
     <string name="humidity">Humidity</string>
     <string name="sunset_sunrise">Sun rise/set</string>
-    <string name="empty_string"></string>
+    <string name="empty_string"> </string>
     <string name="stad_land">City or City,Country code</string>
     <string name="go">Show me the weather</string>
+    <string name="hyphen">" - "</string>
+    <string name="comma">", "</string>
+    <string name="m_s">" m/s"</string>
+    <string name="Bft">" Bft"</string>
+    <string name="newLine">\n</string>
+    <string name="hPa">" hPa"</string>
 
 </resources>

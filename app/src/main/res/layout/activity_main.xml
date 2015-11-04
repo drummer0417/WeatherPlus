@@ -38,7 +38,7 @@
                 android:id="@+id/ibCurrentLocation"
                 android:layout_width="51dp"
                 android:layout_height="match_parent"
-                android:onClick="getWeaterCurrentLocation"
+                android:onClick="getWeatherByCurrentLocation"
                 android:src="@drawable/current_location2"
                 android:background="#00ffffff" />
 
@@ -52,7 +52,7 @@
             android:layout_margin="5dp"
             android:layout_weight="0.1"
             android:background="#1300ff0f"
-            android:onClick="getWeather"
+            android:onClick="getWeatherByInput"
             android:text="@string/go" />
 
 

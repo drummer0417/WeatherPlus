@@ -33,7 +33,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.concurrent.ExecutionException;
@@ -43,20 +42,20 @@ import nl.androidappfactory.weatherplus.data.Weather;
 public class MainActivity extends AppCompatActivity implements LocationListener {
 
     private Weather weather;
-    TextView tvCurrentTemp;
-    TextView tvWind;
-    TextView tvPressure;
-    TextView tvHumidity;
-    TextView tvSunsetSunRise;
+    private TextView tvCurrentTemp;
+    private TextView tvWind;
+    private TextView tvPressure;
+    private TextView tvHumidity;
+    private TextView tvSunsetSunRise;
 
-    Location location;
-    LocationManager locationManager;
-    String provider;
+    private Location location;
+    private LocationManager locationManager;
+    private String provider;
 
-    boolean isGPSEnabled = false;
-    boolean isNetworkEnabled = false;
+    private boolean isGPSEnabled = false;
+    private boolean isNetworkEnabled = false;
     private static final long MIN_DISTANCE_CHANGE = 10; // 10 meters
-    private static final long MIN_TIME_UPDATES = 1000 * 60 * 1; // 1 minute
+    private static final long MIN_TIME_UPDATES = 1000 * 60; // 1 minute
 
     ImageView ivIcon;
     private static final String API_URL = "http://api.openweathermap.org/data/2.5/weather?";
@@ -64,6 +63,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     private static final String UNITS = "&units=metric";
     private static final String IMAGE_URL = "http://openweathermap.org/img/w/";
     private static final String ENCODING = "UTF-8";
+    private static final String DEFAULT_LOCATION = "Eindhoven";
 
     private EditText etLocation;
 
@@ -82,29 +82,48 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         ivIcon = (ImageView) findViewById(R.id.ivIcon);
         etLocation = ((EditText) findViewById(R.id.etLocation));
 
-        location = getLocation(this);
-        Log.d("Location info", location != null ? location.toString() : "null");
+//        location = getLocation(this);
+//        Log.d("Location info", location != null ? location.toString() : "null");
 
-        if (location ==null){
-            etLocation.setText("Eindhoven");
-        }
-        getWeather(null);
+        getWeatherByCurrentLocation(null);
 
     }
 
-    public void getWeaterCurrentLocation(View view) {
+    public void getWeatherByCurrentLocation(View view) {
 
-        // by making etLocation empty the getWeather(View view) methoc will search on current location
+        // by making etLocation empty the getWeather(View view) method will search on current location
         etLocation.setText(null);
-        getWeather(view);
+
+        location = getLocation(this);
+        Log.d("By current location", location.toString());
+
+        String param;
+        if (location != null) {
+            param = "lat=" + location.getLatitude() + "&lon=" + location.getLongitude();
+        } else {
+            param = "q=" + DEFAULT_LOCATION;
+        }
+        String url = API_URL + param + "&appid=" + API_KEY + UNITS;
+
+        getWeather(url);
     }
 
-    public void getWeather(View view) {
+    public void getWeatherByInput(View view) {
 
+        String param = null;
+        try {
+            param = "q=" + URLEncoder.encode(etLocation.getText().toString().trim(), ENCODING);
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        String url = API_URL + param + "&appid=" + API_KEY + UNITS;
 
-        String sLocation = etLocation.getText().toString().trim();
+        getWeather(url);
+    }
 
-        weather = getWeatherData(sLocation);
+    public void getWeather(String url) {
+
+        weather = getWeatherData(url);
 
         ivIcon.setImageBitmap(null);
 
@@ -116,12 +135,12 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
             imm.hideSoftInputFromWindow(etLocation.getWindowToken(), 0);
 
-            etLocation.setText(weather.getCity() + ", " + weather.getCountry());
+            etLocation.setText(concatStrings(weather.getCity(), getString(R.string.comma), weather.getCountry()));
             tvCurrentTemp.setText(formatOneDecimal(weather.getCurrentTemp()));
-            tvWind.setText(weather.getWindDirections() + " - " + weather.getWindSpeedBeuafort() + " Bft\n" + weather.getWindSpeed() + " m/s");
-            tvPressure.setText(weather.getPressure() + " hPa");
-            tvHumidity.setText(weather.getHumidity() + " %");
-            tvSunsetSunRise.setText(weather.getSunRiseTime() + "\n" + weather.getSunSetTime());
+            tvWind.setText(concatStrings(weather.getWindDirections(), getString(R.string.hyphen), weather.getWindSpeedBeuafort(), getString(R.string.Bft), getString(R.string.newLine), weather.getWindSpeed(), getString(R.string.m_s)));
+            tvPressure.setText(concatStrings(weather.getPressure(), getString(R.string.hPa)));
+            tvHumidity.setText(concatStrings(weather.getHumidity(), " %"));
+            tvSunsetSunRise.setText(concatStrings(weather.getSunRiseTime(), "\n", weather.getSunSetTime()));
         } else {
             tvCurrentTemp.setText("");
             tvWind.setText("");
@@ -132,19 +151,11 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         }
     }
 
-    private Weather getWeatherData(String sLocation) {
+    private Weather getWeatherData(String url) {
 
         HtmlDataReader reader = new HtmlDataReader();
         Weather weather = null;
         try {
-            String param = null;
-            if (sLocation != null && sLocation.length() != 0) {
-                param = "q=" + URLEncoder.encode(sLocation, ENCODING);
-            } else {
-                param = "lat=" + location.getLatitude() + "&lon=" + location.getLongitude();
-            }
-
-            String url = API_URL + param + "&appid=" + API_KEY + UNITS;
             Log.d("URL", url);
 
             String weatherData = reader.execute(url).get();
@@ -178,29 +189,22 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                         weather.setWindDeg(wind.getString("deg"));
                     }
                     JSONArray weatherArray = jsonObject.isNull("weather") ? null : jsonObject.getJSONArray("weather");
-                    if (weather != null) {
+                    if (weatherArray != null && !weatherArray.isNull(0)) {
                         weather.setDescription(weatherArray.getJSONObject(0).getString("description"));
                         weather.setIcon(weatherArray.getJSONObject(0).getString("icon"));
                     }
                     JSONObject sys = jsonObject.isNull("sys") ? null : jsonObject.getJSONObject("sys");
-
-                    weather.setCountry(sys.isNull("country") ? null : sys.getString("country"));
-                    weather.setSunRise(sys.isNull("sunrise") ? null : sys.getString("sunrise"));
-                    weather.setSunSet(sys.isNull("sunset") ? null : sys.getString("sunset"));
-
+                    if (sys != null) {
+                        weather.setCountry(sys.isNull("country") ? null : sys.getString("country"));
+                        weather.setSunRise(sys.isNull("sunrise") ? null : sys.getString("sunrise"));
+                        weather.setSunSet(sys.isNull("sunset") ? null : sys.getString("sunset"));
+                    }
                     Log.d("weather", weather.toString());
                 }
             }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        } catch (JSONException e) {
-            e.printStackTrace();
-        } catch (UnsupportedEncodingException e) {
+        } catch (InterruptedException | ExecutionException | JSONException | NullPointerException e) {
             e.printStackTrace();
         }
-
         return weather;
     }
 
@@ -211,9 +215,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         isGPSEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
         isNetworkEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
 
-        if (!isGPSEnabled && !isNetworkEnabled) {
-            // no network provider is enabled
-        } else {
+        if (isGPSEnabled || isNetworkEnabled)
             if (isNetworkEnabled) {
                 // Permission check required as of version 23
                 checkPermission();
@@ -222,13 +224,12 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                     theLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
                 }
             }
-            // if GPS Enabled get lat/long using GPS Services
-            if (isGPSEnabled) {
-                if (theLocation == null) {
-                    Log.d("GPS Enabled", "GPS Enabled");
-                    if (locationManager != null) {
-                        theLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                    }
+        // if GPS Enabled get lat/long using GPS Services
+        if (isGPSEnabled) {
+            if (theLocation == null) {
+                Log.d("GPS Enabled", "GPS Enabled");
+                if (locationManager != null) {
+                    theLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
                 }
             }
         }
@@ -237,7 +238,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
     private String formatOneDecimal(String s) {
 
-        String result = null;
+        String result;
         try {
             result = String.format("%.1f", Double.parseDouble(s));
         } catch (Exception e) {
@@ -297,8 +298,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 InputStream is = connection.getInputStream();
                 bitmap = BitmapFactory.decodeStream(is);
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -320,7 +319,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         }
     }
 
-
     public class HtmlDataReader extends AsyncTask<String, Void, String> {
 
         @Override
@@ -334,13 +332,11 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 InputStream is = connection.getInputStream();
                 BufferedReader br = new BufferedReader(new InputStreamReader(is));
                 sb = new StringBuffer();
-                String line = null;
+                String line;
                 while ((line = br.readLine()) != null) {
                     sb.append(line);
                 }
 
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -371,22 +367,24 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         return super.onOptionsItemSelected(item);
     }
 
-    private boolean checkPermission() {
-        if (Build.VERSION.SDK_INT >= 23) {
-            if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                // TODO: Consider calling
-                //    public void requestPermissions(@NonNull String[] permissions, int requestCode)
-                // here to request the missing permissions, and then overriding
-                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                //                                          int[] grantResults)
-                // to handle the case where the user grants the permission. See the documentation
-                // for Activity#requestPermissions for more details.
-                return false;
-            } else {
-                return true;
-            }
-        } else {
-            return false;
+    private String concatStrings(String... strings) {
+        StringBuilder sb = new StringBuilder();
+
+        for (String string : strings) {
+            sb.append(string);
         }
+
+        return sb.toString();
+    }
+
+    private boolean checkPermission() {
+
+
+        return Build.VERSION.SDK_INT >= 23 && !(checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED);
+//        if (Build.VERSION.SDK_INT >= 23) {
+//            return !(checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED);
+//        } else {
+//            return false;
+//        }
     }
 }
