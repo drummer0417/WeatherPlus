@@ -1,6 +1,7 @@
 package nl.androidappfactory.weatherplus;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
@@ -12,7 +13,6 @@ import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -22,24 +22,18 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
-
+import nl.androidappfactory.weatherplus.data.Weather;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.concurrent.ExecutionException;
 
-import nl.androidappfactory.weatherplus.data.Weather;
-
-public class MainActivity extends AppCompatActivity implements LocationListener {
+public class MainActivity extends Activity implements LocationListener {
 
     private Weather weather;
     private TextView tvCurrentTemp;
@@ -57,6 +51,10 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     private static final long MIN_DISTANCE_CHANGE = 10; // 10 meters
     private static final long MIN_TIME_UPDATES = 1000 * 60; // 1 minute
 
+    private static final String[] INITIAL_PERMS={
+            Manifest.permission.ACCESS_FINE_LOCATION
+    };
+
     ImageView ivIcon;
     private static final String API_URL = "http://api.openweathermap.org/data/2.5/weather?";
     private static final String API_KEY = "778cf1f4833e31ec3f0d6c5916e48724";
@@ -65,10 +63,15 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     private static final String ENCODING = "UTF-8";
     private static final String DEFAULT_LOCATION = "Eindhoven";
 
+    private static final int INITIAL_REQUEST = 1337;
+    private static final int CAMERA_REQUEST = INITIAL_REQUEST + 1;
+    private static final int CONTACTS_REQUEST = INITIAL_REQUEST + 2;
+    private static final int LOCATION_REQUEST = INITIAL_REQUEST + 3;
     private EditText etLocation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_NOSENSOR);
@@ -82,6 +85,9 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         ivIcon = (ImageView) findViewById(R.id.ivIcon);
         etLocation = ((EditText) findViewById(R.id.etLocation));
 
+        if (!canAccessLocation()) {
+            requestPermissions(INITIAL_PERMS, INITIAL_REQUEST);
+        }
 //        location = getLocation(this);
 //        Log.d("Location info", location != null ? location.toString() : "null");
 
@@ -209,6 +215,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     }
 
     private Location getLocation(Context context) {
+
         Location theLocation = null;
 
         locationManager = (LocationManager) context.getSystemService(LOCATION_SERVICE);
@@ -249,6 +256,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
     @Override
     public void onLocationChanged(Location location) {
+
         Log.d("Location info", "location changed: " + location.toString());
     }
 
@@ -286,12 +294,14 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
         @Override
         protected void onPreExecute() {
+
             super.onPreExecute();
 
         }
 
         @Override
         protected void onPostExecute(Bitmap bitmap) {
+
             super.onPostExecute(bitmap);
             if (bitmap != null) {
                 ivIcon.setImageBitmap(bitmap);
@@ -348,6 +358,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     }
 
     private String concatStrings(String... strings) {
+
         StringBuilder sb = new StringBuilder();
 
         for (String string : strings) {
@@ -355,6 +366,16 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         }
 
         return sb.toString();
+    }
+
+    private boolean canAccessLocation() {
+
+        return (hasPermission(Manifest.permission.ACCESS_FINE_LOCATION));
+    }
+
+    private boolean hasPermission(String perm) {
+
+        return (PackageManager.PERMISSION_GRANTED == checkSelfPermission(perm));
     }
 
     private boolean checkPermission() {
